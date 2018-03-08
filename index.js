@@ -23,15 +23,16 @@ function setup() {
   gui.add(spiral, 'points', 0, 2000)
   gui.add(spiral, 'angle', 0, 20)
   gui.add(spiral, 'skipEvery', 0, 30).step(1) 
-  gui.add(spiral, 'offset', 0, 200)
-  gui.add(spiral, 'zoom', 0, 20)
-  gui.add(spiral, 'dotSizeChangeRate', 0, 0.5)
+  gui.add(spiral, 'offset', 0, 300)
+  gui.add(spiral, 'zoom', 0, 25)
+  gui.add(spiral, 'dotSizeChangeRate', -0.5, 0.5)
   gui.add(spiral, 'distChangeRate', 0, 1)
   gui.add(spiral, 'dotSizeX', 0, 20)
   gui.add(spiral, 'dotSizeY', 0, 20)
   gui.add(spiral, 'rotate')
   gui.add(spiral, 'fadeIn')
   gui.add(spiral, 'fadeOut')
+  gui.add(spiral, 'energy', 0, 2)
   
   // gui.onChange = function (f) {
   //   var i, j;
@@ -65,12 +66,17 @@ function Spiral() {
   this.rotate = false
   this.fadeIn = true
   this.fadeOut = true
+  this.energy = 1
   
   this.render = function() {
     push()
     translate(width/2, height/2)
     if (this.rotate) rotate(rotateTween.getValue())
     for (var i=0; i<this.points; i++){
+      const [angleNoise, distNoise] = [
+        1 + 0.001 * this.energy * (Math.random() - 0.5),
+        1 + 0.1 * this.energy * (Math.random() - 0.5)
+      ]
       if (i < this.offset) continue
       if (this.skipEvery && i % this.skipEvery === 0) continue
       push();
@@ -81,11 +87,11 @@ function Spiral() {
 
       // fill(`rgba(100, 100, 200, ${opacity})`)
       fill(`rgba(255, 255, 255, ${opacity})`)
-      rotate(i * this.angle);
-      const dist = Math.pow(i, this.distChangeRate) * this.zoom;
+      rotate(i * this.angle * angleNoise);
+      const dist = (Math.pow(i, this.distChangeRate) - 1) * this.zoom;
       const dotSizeX = dsxTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeX
       const dotSizeY = dsyTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeY
-      ellipse(0, dist, dotSizeX, dotSizeY);
+      ellipse(0, dist * distNoise, dotSizeX, dotSizeY);
       pop();
     }
   	pop()
