@@ -1,10 +1,34 @@
-var dsxTween = new Tween(5, 105, 2000, 'quintInOut', 'loop')
-var dsyTween = new Tween(5, -4.5, 2000, 'quintInOut', 'loop')
-var rotateTween = new Tween(0, 2 * 3.14159265, 50000, 'linear', 'repeat')
-
 var CAPTURE_MAX_SECONDS = 8
 var canvas
 var capturer
+var mic
+
+const tweens = {
+  linear: new Tween(0, 1, 2000, 'linear', 'loop'),
+  quintInOut: new Tween(0, 1, 2000, 'quintInOut', 'loop')
+}
+
+// TODO: remove/refactor to use the above tweens
+var dsxTween = new Tween(1, 100, 2000, 'quintInOut', 'loop')
+var dsyTween = new Tween(1, 10, 3000, 'quintInOut', 'loop')
+var rotateTween = new Tween(0, 2 * 3.14159265, 50000, 'linear', 'repeat')
+
+const controllers = [
+  null,
+  // 'mic',
+  ...Object.keys(tweens)
+]
+
+const getValue = (controller, min, max) => {
+  if (!controller) {
+    return (max - min) / 2
+  } else if (controller === 'mic') {
+    return (max - min) / 2
+  } else {
+    const tween = tweens[controller]
+    return min + (tween.getValue() * (max - min))
+  }
+}
 
 // Create a capturer that exports a WebM video
 if (CCapture) {
@@ -21,7 +45,11 @@ function setup() {
   spiral = new Spiral();
   var gui = new dat.GUI();
   gui.add(spiral, 'points', 0, 2000)
-  gui.add(spiral, 'angle', 0, 20)
+
+  gui.add(spiral, 'angleMin', 0, 90)
+  gui.add(spiral, 'angleMax', 0, 90)
+  gui.add(spiral, 'angleController', controllers)
+
   gui.add(spiral, 'skipEvery', 0, 30).step(1) 
   gui.add(spiral, 'offset', 0, 300)
   gui.add(spiral, 'zoom', 0, 25)
@@ -33,6 +61,7 @@ function setup() {
   gui.add(spiral, 'fadeIn')
   gui.add(spiral, 'fadeOut')
   gui.add(spiral, 'energy', 0, 2)
+  gui.addColor(spiral, 'colour')
   
   // gui.onChange = function (f) {
   //   var i, j;
@@ -58,7 +87,11 @@ function Spiral() {
   this.dotSizeY = 3
   this.dotSizeChangeRate = 0
   this.radius = 8
-  this.angle = 1.1
+
+  this.angleMin = 0.1
+  this.angleMax = 20
+  this.angleController = null
+
   this.distChangeRate = 0.42
   this.zoom = 15
   this.offset = 0
@@ -67,6 +100,7 @@ function Spiral() {
   this.fadeIn = true
   this.fadeOut = true
   this.energy = 1
+  this.colour = [255, 255, 255]
   
   this.render = function() {
     push()
@@ -86,8 +120,12 @@ function Spiral() {
       if (this.fadeOut) opacity = opacity - ((i / this.points)) 
 
       // fill(`rgba(100, 100, 200, ${opacity})`)
-      fill(`rgba(255, 255, 255, ${opacity})`)
-      rotate(i * this.angle * angleNoise);
+      const [r, g, b] = this.colour
+      fill(`rgba(${r}, ${g}, ${b}, ${opacity})`)
+
+      const angle = getValue(this.angleController, this.angleMin, this.angleMax) 
+      rotate(i * angle * angleNoise)
+
       const dist = (Math.pow(i, this.distChangeRate) - 1) * this.zoom;
       const dotSizeX = dsxTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeX
       const dotSizeY = dsyTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeY
