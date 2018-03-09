@@ -15,7 +15,7 @@ var rotateTween = new Tween(0, 2 * 3.14159265, 50000, 'linear', 'repeat')
 
 const controllers = [
   null,
-  // 'mic',
+  'mic',
   ...Object.keys(tweens)
 ]
 
@@ -23,7 +23,7 @@ const getValue = (controller, min, max) => {
   if (!controller) {
     return (max - min) / 2
   } else if (controller === 'mic') {
-    return (max - min) / 2
+    return min + (mic.getLevel() * (max - min))
   } else {
     const tween = tweens[controller]
     return min + (tween.getValue() * (max - min))
@@ -43,14 +43,18 @@ if (CCapture) {
 function setup() { 
   createCanvas(window.innerWidth, window.innerHeight)
   spiral = new Spiral();
-  var gui = new dat.GUI();
-  gui.add(spiral, 'points', 0, 2000)
+  var gui = new dat.GUI()
 
+  mic = new p5.AudioIn()
+  mic.start()
+
+  // points
+  gui.add(spiral, 'points', 0, 2000)
+  // angle
   gui.add(spiral, 'angleMin', 0, 90)
   gui.add(spiral, 'angleMax', 0, 90)
   gui.add(spiral, 'angleController', controllers)
-
-  gui.add(spiral, 'skipEvery', 0, 30).step(1) 
+  // gui.add(spiral, 'skipEvery', 0, 30).step(1) 
   gui.add(spiral, 'offset', 0, 300)
   gui.add(spiral, 'zoom', 0, 25)
   gui.add(spiral, 'dotSizeChangeRate', -0.5, 0.5)
@@ -95,7 +99,6 @@ function Spiral() {
   this.distChangeRate = 0.42
   this.zoom = 15
   this.offset = 0
-  this.skipEvery = 0
   this.rotate = false
   this.fadeIn = true
   this.fadeOut = true
@@ -112,7 +115,7 @@ function Spiral() {
         1 + 0.1 * this.energy * (Math.random() - 0.5)
       ]
       if (i < this.offset) continue
-      if (this.skipEvery && i % this.skipEvery === 0) continue
+      // if (this.skipEvery && i % this.skipEvery === 0) continue
       push();
       noStroke()
       let opacity = 1
