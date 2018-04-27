@@ -4,9 +4,12 @@ var capturer
 var mic
 
 const tweens = {
-  linear: new Tween(0, 1, 2000, 'linear', 'loop'),
-  quintInOut: new Tween(0, 1, 2000, 'quintInOut', 'loop'),
-  quintInFast: new Tween(0, 1, 500, 'quintIn', 'repeat')
+  linear_1s: new Tween(0, 1, 1000, 'linear', 'loop'),
+  linear_2s: new Tween(0, 1, 2000, 'linear', 'loop'),
+  linear_3s: new Tween(0, 1, 3000, 'linear', 'loop'),
+  quintInOut_1s: new Tween(0, 1, 1000, 'quintInOut', 'loop'),
+  quintInOut_2s: new Tween(0, 1, 2000, 'quintInOut', 'loop'),
+  quintIn_1s: new Tween(0, 1, 1000, 'quintIn', 'loop')
 }
 
 // TODO: remove/refactor to use the above tweens
@@ -27,7 +30,7 @@ const getValue = (controller, min, max) => {
     const tween = tweens[controller]
     return min + (tween.getValue() * (max - min))
   } else {
-    return (max - min) / 2 
+    return (max + min) / 2 
   }
 }
 
@@ -63,8 +66,15 @@ function setup() {
   gui.add(spiral, 'zoom', 0, 50)
   gui.add(spiral, 'dotSizeChangeRate', -0.5, 0.5).step(0.01)
   gui.add(spiral, 'distChangeRate', 0, 1)
-  gui.add(spiral, 'dotSizeX', 0, 20)
-  gui.add(spiral, 'dotSizeY', 0, 20)
+
+  gui.add(spiral, 'dotWidthMin', 0, 120)
+  gui.add(spiral, 'dotWidthMax', 0, 120)
+  gui.add(spiral, 'dotWidthController', controllers)
+
+  gui.add(spiral, 'dotHeightMin', 0, 120)
+  gui.add(spiral, 'dotHeightMax', 0, 120)
+  gui.add(spiral, 'dotHeightController', controllers)
+
   gui.add(spiral, 'rotate')
   gui.add(spiral, 'fadeIn')
   gui.add(spiral, 'fadeOut')
@@ -92,13 +102,20 @@ function draw() {
 
 function Spiral() {
   this.points = 260
-  this.dotSizeX = 3
-  this.dotSizeY = 3
+
+  this.dotWidthMin = 3
+  this.dotWidthMax = 3
+  this.dotWidthController = null
+
+  this.dotHeightMin = 3
+  this.dotHeightMax = 3
+  this.dotHeightController = null
+
   this.dotSizeChangeRate = 0
   this.radius = 8
 
-  this.angleMin = 0.1
-  this.angleMax = 20
+  this.angleMin = 40
+  this.angleMax = 40
   this.angleController = null
 
   this.offsetMin = 0
@@ -111,11 +128,13 @@ function Spiral() {
   this.fadeIn = true
   this.fadeOut = true
   this.energy = 0
-  this.colour = [255, 255, 255]
+  this.colour = [0, 0, 255]
   
   this.render = function() {
     const angle = getValue(this.angleController, this.angleMin, this.angleMax) 
     const offset = getValue(this.offsetController, this.offsetMin, this.offsetMax)
+    const dotWidth = getValue(this.dotWidthController, this.dotWidthMin, this.dotWidthMax)
+    const dotHeight = getValue(this.dotHeightController, this.dotHeightMin, this.dotHeightMax)
     
     push()
     translate(width/2, height/2)
@@ -135,14 +154,19 @@ function Spiral() {
 
       // fill(`rgba(100, 100, 200, ${opacity})`)
       const [r, g, b] = this.colour
-      fill(`rgba(${r}, ${g}, ${b}, ${opacity})`)
+      const str = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${opacity})`
+
+      fill(color(str))
 
       rotate(i * angle * angleNoise)
 
       const dist = (Math.pow(i, this.distChangeRate) - 1) * this.zoom;
-      const dotSizeX = dsxTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeX
-      const dotSizeY = dsyTween.getValue() * Math.pow(i, this.dotSizeChangeRate) * this.dotSizeY
-      ellipse(0, dist * distNoise, dotSizeX, dotSizeY);
+      ellipse(
+        0,
+        dist * distNoise,
+        dotWidth * Math.pow(i, this.dotSizeChangeRate),
+        dotHeight * Math.pow(i, this.dotSizeChangeRate)
+      )
       pop();
     }
   	pop()
